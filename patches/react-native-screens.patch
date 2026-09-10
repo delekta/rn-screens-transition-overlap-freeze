@@ -1,0 +1,64 @@
+diff --git a/ios/RNSScreen.h b/ios/RNSScreen.h
+index 87c83599f38c1c7952187530743ea5d6001d3a96..b234dc6a00f2b4569ae5ea1f06f53cc50233f46a 100644
+--- a/ios/RNSScreen.h
++++ b/ios/RNSScreen.h
+@@ -21,6 +21,8 @@
+ #import <React/RCTView.h>
+ #endif // RCT_NEW_ARCH_ENABLED
+ 
++#import <React/UIViewController+React.h>
++
+ NS_ASSUME_NONNULL_BEGIN
+ 
+ #ifdef RCT_NEW_ARCH_ENABLED
+diff --git a/ios/RNSScreen.mm b/ios/RNSScreen.mm
+index 1c447628d505fbf1bc0c296aee1b6d78321f4559..fe5ecb7e5034e47c0131b3a5829923e0101a5073 100644
+--- a/ios/RNSScreen.mm
++++ b/ios/RNSScreen.mm
+@@ -1711,6 +1711,17 @@ Class<RCTComponentViewProtocol> RNSScreenCls(void)
+     [RNSScreenView.viewInteractionManagerInstance enableInteractionsForLastSubtree];
+   }
+   [super viewDidAppear:animated];
++
++  id<UIViewControllerTransitionCoordinator> coordinator = self.transitionCoordinator;
++  if (coordinator == nil) {
++    [self reactNotifyViewControllerDidAppear:animated];
++  } else {
++    [coordinator animateAlongsideTransition:nil
++                                 completion:^(id<UIViewControllerTransitionCoordinatorContext> _Nonnull context) {
++                                   [self reactNotifyViewControllerDidAppear:animated];
++                                 }];
++  }
++
+   if (!_isSwiping || _shouldNotify) {
+     // we are going forward or dismissing without swipe
+     // or successfully swiped back
+@@ -1727,6 +1738,7 @@ Class<RCTComponentViewProtocol> RNSScreenCls(void)
+ - (void)viewDidDisappear:(BOOL)animated
+ {
+   [super viewDidDisappear:animated];
++  [self reactNotifyViewControllerDidDisappear:animated];
+   if (self.parentViewController == nil && self.presentingViewController == nil) {
+     if (self.screenView.preventNativeDismiss) {
+       // if we want to prevent the native dismiss, we do not send dismissal event,
+diff --git a/ios/RNSScreenContainer.h b/ios/RNSScreenContainer.h
+index 51ed73804505e814ebcb6a99144738d72441a321..d1d50fe058affe53c576cdf2427b46eea1b795ce 100644
+--- a/ios/RNSScreenContainer.h
++++ b/ios/RNSScreenContainer.h
+@@ -6,6 +6,7 @@
+ #endif
+ 
+ #import <React/RCTViewManager.h>
++#import <React/RCTViewController.h>
+ 
+ NS_ASSUME_NONNULL_BEGIN
+ 
+@@ -20,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
+ 
+ @end
+ 
+-@interface RNSViewController : UIViewController <RNSViewControllerDelegate>
++@interface RNSViewController : RCTViewController <RNSViewControllerDelegate>
+ 
+ - (UIViewController *)findActiveChildVC;
+ 

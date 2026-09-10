@@ -1,0 +1,56 @@
+{
+  "name": "RNScreensKeyboardFreezeRepro",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "android": "react-native run-android",
+    "ios": "react-native run-ios",
+    "lint": "eslint .",
+    "start": "react-native start",
+    "typecheck": "tsc --noEmit",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@discord/bottom-sheet": "https://github.com/discord/react-native-bottom-sheet/archive/96025bcdfefbec726950ae086ea26903dc8f8dcd.tar.gz",
+    "@gorhom/portal": "1.0.14",
+    "@react-navigation/native": "7.3.12",
+    "@react-navigation/native-stack": "7.18.4",
+    "@react-navigation/stack": "7.10.15",
+    "react": "19.2.3",
+    "react-native": "discord/react-native#6145ad567e96bc97eba4c0d9a0e5192661668e19&path:packages/react-native",
+    "react-native-gesture-handler": "3.1.0",
+    "react-native-reanimated": "discord/react-native-reanimated#82d9fa6f1bc21fd6582486843ca3756bc8553761&path:packages/react-native-reanimated",
+    "react-native-safe-area-context": "5.8.0",
+    "react-native-screens": "https://github.com/discord/react-native-screens/archive/d5fefe590fe2bbbd69c76cb47dc376347576da63.tar.gz"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.2",
+    "@babel/preset-env": "^7.25.3",
+    "@babel/runtime": "^7.25.0",
+    "@react-native-community/cli": "20.1.0",
+    "@react-native-community/cli-platform-android": "20.1.0",
+    "@react-native-community/cli-platform-ios": "20.1.0",
+    "@react-native/babel-preset": "0.86.0",
+    "@react-native/eslint-config": "0.86.0",
+    "@react-native/metro-config": "0.86.0",
+    "@react-native/typescript-config": "0.86.0",
+    "@types/invariant": "^2.2.37",
+    "@types/jest": "^29.5.13",
+    "@types/react": "^19.2.0",
+    "@types/react-test-renderer": "^19.1.0",
+    "eslint": "^8.19.0",
+    "jest": "^29.6.3",
+    "prettier": "2.8.8",
+    "react-test-renderer": "19.2.3",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">= 22.11.0"
+  },
+  "packageManager": "pnpm@9.12.2",
+  "pnpm": {
+    "patchedDependencies": {
+      "react-native-screens": "patches/react-native-screens.patch"
+    }
+  }
+}

@@ -1,0 +1,49 @@
+# Resolve react_native_pods.rb with node to allow for hoisting
+ENV['RCT_USE_PREBUILT_RNCORE'] = '0'
+ENV['RCT_USE_RN_DEP'] = '0'
+
+require Pod::Executable.execute_command('node', ['-p',
+  'require.resolve(
+    "react-native/scripts/react_native_pods.rb",
+    {paths: [process.argv[1]]},
+  )', __dir__]).strip
+
+platform :ios, min_ios_version_supported
+prepare_react_native_project!
+
+linkage = ENV['USE_FRAMEWORKS']
+if linkage != nil
+  Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
+  use_frameworks! :linkage => linkage.to_sym
+end
+
+target 'RNScreensKeyboardFreezeRepro' do
+  config = use_native_modules!
+
+  # Discord's RN tarball does not ship pre-generated FBReactNativeSpec. Official
+  # npm RN does, so pod install would otherwise omit those headers and Fabric
+  # fails with: 'react/renderer/components/FBReactNativeSpec/ComponentDescriptors.h'
+  rn_root = config[:reactNativePath]
+  spec_dir = File.join(rn_root, 'React', 'FBReactNativeSpec')
+  unless File.exist?(File.join(spec_dir, 'react', 'renderer', 'components', 'FBReactNativeSpec', 'ComponentDescriptors.h'))
+    Pod::UI.puts 'Generating FBReactNativeSpec (missing from this RN checkout)'.yellow
+    spec_script = File.join(rn_root, 'scripts', 'codegen', 'generate-artifacts-executor', 'generateFBReactNativeSpecIOS.js')
+    system('node', '-e', "require(#{spec_script.inspect}).generateFBReactNativeSpecIOS(#{rn_root.inspect})") ||
+      raise('Failed to generate FBReactNativeSpec. Run from the RN package: node -e "require(\'./scripts/codegen/generate-artifacts-executor/generateFBReactNativeSpecIOS\').generateFBReactNativeSpecIOS(\'.\')"')
+  end
+
+  use_react_native!(
+    :path => config[:reactNativePath],
+    # An absolute path to your application root.
+    :app_path => "#{Pod::Config.instance.installation_root}/.."
+  )
+
+  post_install do |installer|
+    react_native_post_install(
+      installer,
+      config[:reactNativePath],
+      :mac_catalyst_enabled => false,
+      # :ccache_enabled => true
+    )
+  end
+end
