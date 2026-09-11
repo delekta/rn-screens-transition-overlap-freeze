@@ -1,8 +1,6 @@
 import React from 'react';
-import BottomSheet, {BottomSheetView} from '@discord/bottom-sheet';
 import {
   NavigationContainer,
-  NavigationIndependentTree,
   useNavigationContainerRef,
 } from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
@@ -18,19 +16,15 @@ import {
   View,
 } from 'react-native';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
-import {enableFreeze} from 'react-native-screens';
 import {SafeAreaProvider, SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 
-enableFreeze();
+// enableFreeze(); // does not matter for repro
 
 /**
  * Required to freeze:
  * 1. iOS native-stack modal present (`presentation: 'modal'`).
- * 2. A second native-stack inside a 3rd-party sheet, sibling of the root stack.
+ * 2. A second native-stack inside a plain View, sibling of the root stack.
  * 3. That second stack unmounts during the present.
- *
- * A sibling native-stack in a plain View is not this bug: delay does not help
- * there. Discord's Apps stack lives in `@discord/bottom-sheet`.
  *
  * Delay unmount 1s (switch) to confirm the present finishing first avoids the freeze.
  */
@@ -110,7 +104,7 @@ function HomeScreen({
   return (
     <SafeAreaView style={styles.screen} edges={['bottom']}>
       <Text style={styles.copy}>
-        Open the nested native-stack in the sheet, then present the modal. The
+        Open the nested native-stack in the view, then present the modal. The
         modal unmounts that stack on mount. If the magenta tick stops, the main
         thread is dead.
       </Text>
@@ -160,34 +154,27 @@ function ModalNavigator() {
 
 function NestedHomeScreen() {
   return (
-    <BottomSheetView style={styles.nestedScreen}>
+    <View style={styles.nestedScreen}>
       <Text style={styles.title}>Nested native-stack</Text>
-      <Text style={styles.copy}>Blank screen in a sheet is enough. Leave this open and present the modal.</Text>
-    </BottomSheetView>
+      <Text style={styles.copy}>Blank screen in a view is enough. Leave this open and present the modal.</Text>
+    </View>
   );
 }
 
-function NestedStackSheet({onClose}: {onClose: () => void}) {
+function NestedStackSheet() {
   return (
     <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
-      <BottomSheet
-        index={0}
-        snapPoints={[360, '75%']}
-        enableDynamicSizing={false}
-        animateOnMount
-        onClose={onClose}>
-        <NavigationIndependentTree>
-          <NavigationContainer>
-            <NestedStack.Navigator
-              screenOptions={{
-                headerShown: false,
-                contentStyle: styles.sheetBackground,
-              }}>
-              <NestedStack.Screen name="NestedHome" component={NestedHomeScreen} />
-            </NestedStack.Navigator>
-          </NavigationContainer>
-        </NavigationIndependentTree>
-      </BottomSheet>
+      <View style={styles.plainSheet}>
+        <NavigationContainer>
+          <NestedStack.Navigator
+            screenOptions={{
+              headerShown: false,
+              contentStyle: styles.sheetBackground,
+            }}>
+            <NestedStack.Screen name="NestedHome" component={NestedHomeScreen} />
+          </NestedStack.Navigator>
+        </NavigationContainer>
+      </View>
     </View>
   );
 }
@@ -244,7 +231,7 @@ function App() {
               />
             </RootStack.Navigator>
           </NavigationContainer>
-          {nestedVisible ? <NestedStackSheet onClose={unmountNested} /> : null}
+          {nestedVisible ? <NestedStackSheet /> : null}
         </UnmountNestedContext.Provider>
         <HeartbeatOverlay />
       </SafeAreaProvider>
@@ -305,6 +292,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   sheetBackground: {
+    backgroundColor: '#2b2d31',
+  },
+  plainSheet: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    left: 0,
+    height: 360,
     backgroundColor: '#2b2d31',
   },
   nestedScreen: {

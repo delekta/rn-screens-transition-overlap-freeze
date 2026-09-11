@@ -1,25 +1,31 @@
 # RNScreens nested-stack freeze
 
-iOS main-thread freeze when a **native-stack modal present** overlaps **unmounting another native-stack** (`UINavigationController`) that lives in a **3rd-party sheet**.
+iOS main-thread freeze when presenting a **native-stack modal** overlaps
+**unmounting a sibling native stack** (`UINavigationController`).
 
-This is the Discord Apps + channel-details hang.
+This is a minimal reproduction of an underlying `react-native-screens`/UIKit
+transition race.
 
 ## Required
 
 1. iOS (New Architecture; use Release if Debug does not hang).
-2. Root `createNativeStackNavigator` presents a **nested** native-stack with `presentation: 'modal'`.
-3. A second `createNativeStackNavigator` is mounted as a **sibling** of `NavigationContainer`, **inside `@discord/bottom-sheet`** (not a plain `View`).
-4. The modal’s **mount** unmounts that second stack (`setState(false)`).
-
-A sibling native-stack in a plain overlay is **not** this bug: presenting then still freezes even with a 1s delay. Discord’s Apps stack is in the sheet.
+2. A root `createNativeStackNavigator` presents a nested native stack with
+   `presentation: 'modal'`.
+3. A second `createNativeStackNavigator` is mounted as a sibling of the root
+   `NavigationContainer`.
+4. Mounting the modal immediately unmounts that sibling stack through
+   conditional rendering.
 
 Magenta spinner/tick stopping means the main thread is dead.
 
 ## Not required
 
-Apps list UI, members UI, `reloadInputViews`, keyboard animation, JS stack, event log.
+A bottom sheet, custom keyboard, `reloadInputViews`, keyboard animation,
+application UI, JS stack, or event logging.
 
-Two native stacks existing at once also does **not** freeze (with the sheet). Unmounting the sheet stack **during** the present does. Unmounting 1s later does not.
+The sibling stack is hosted in a fixed plain `View`. The important operation is
+removing its native navigation controller while the root modal presentation is
+in progress.
 
 ## Repro
 
@@ -28,4 +34,5 @@ Two native stacks existing at once also does **not** freeze (with the sheet). Un
 3. Tap **Present modal** (or header **Modal**).
 4. Tick freezes.
 
-Turn the switch **on** and repeat: modal appears, nested stack goes away after 1s, no freeze.
+Use **Unmount nested stack 1s later** as a timing control to compare immediate
+unmount with teardown after the modal presentation has had time to finish.
